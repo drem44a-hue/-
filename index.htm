@@ -1,1 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة ذاكرة الفواكه الاحترافية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- التصميم (CSS) --- */
+        :root {
+            --primary: #ff4757;
+            --secondary: #2f3542;
+            --bg: #f1f2f6;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .screen { display: none; }
+        .active { display: block; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--primary);
+            height: 70px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            color: transparent;
+            transition: 0.3s;
+        }
+
+        .card.flipped {
+            background: white;
+            border: 2px solid var(--primary);
+            color: black;
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            background: #2ed573;
+            color: white;
+            visibility: visible;
+        }
+
+        .leaderboard {
+            margin-top: 20px;
+            text-align: right;
+            border-top: 1px solid #eee;
+        }
+
+        .leaderboard ul { list-style: none; padding: 0; }
+        .leaderboard li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="auth-screen" class="screen active">
+        <h1>🍓 ذاكرة الفواكه</h1>
+        <input type="email" id="email" placeholder="البريد الإلكتروني">
+        <input type="password" id="password" placeholder="كلمة المرور">
+        <input type="text" id="username" placeholder="اسم اللاعب (للتسجيل الجديد)">
+        <button onclick="login()">تسجيل دخول</button>
+        <button onclick="register()" style="background: var(--secondary);">إنشاء حساب</button>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <h3>مرحباً <span id="user-name-display"></span> 👋</h3>
+        <div style="display: flex; justify-content: space-around; margin-bottom: 10px;">
+            <span>الوقت: <b id="timer">0</b></span>
+            <span>الحركات: <b id="moves">0</b></span>
+        </div>
+        <div class="game-grid" id="game-grid"></div>
+        <button id="start-btn" onclick="startGame()">ابدأ اللعب</button>
+        <button onclick="logout()" style="background: #ccc; color: #333; font-size: 0.8rem; width: auto; padding: 5px 15px;">خروج</button>
+
+        <div class="leaderboard">
+            <h4>🏆 قائمة المتصدرين (حقيقية):</h4>
+            <ul id="leaderboard-list"></ul>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // --- الربط بمشروعك (استخدمت بياناتك من الصورة) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCb7HtlR_2epwO-cbHk8Y2GDIW5x7jqhy4",
+      authDomain: "enter-you-pas.firebaseapp.com",
+      projectId: "enter-you-pas",
+      storageBucket: "enter-you-pas.firebasestorage.app",
+      messagingSenderId: "1003250102693",
+      appId: "1:1003250102693:web:c1a423dce5cad89cb3b84c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // متغيرات اللعبة
+    const fruits = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝'];
+    let cards = [...fruits, ...fruits];
+    let flippedCards = [];
+    let moves = 0;
+    let matches = 0;
+    let timerInterval;
+    let seconds = 0;
+
+    // مراقبة تسجيل الدخول
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('auth-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            document.getElementById('user-name-display').innerText = user.displayName || user.email;
+            loadLeaderboard();
+        } else {
+            document.getElementById('auth-screen').classList.add('active');
+            document.getElementById('game-screen').classList.remove('active');
+        }
+    });
+
+    async function register() {
+        const e = document.getElementById('email').value;
+        const p = document.getElementById('password').value;
+        const u = document.getElementById('username').value;
+        try {
+            const res = await auth.createUserWithEmailAndPassword(e, p);
+            await res.user.updateProfile({ displayName: u });
+            alert("تم إنشاء الحساب!");
+        } catch (err) { alert(err.message); }
+    }
+
+    async function login() {
+        const e = document.getElementById('email').value;
+        const p = document.getElementById('password').value;
+        try { await auth.signInWithEmailAndPassword(e, p); } catch (err) { alert("خطأ في البيانات"); }
+    }
+
+    function logout() { auth.signOut(); }
+
+    // منطق اللعبة
+    function startGame() {
+        moves = 0; matches = 0; seconds = 0;
+        document.getElementById('moves').innerText = '0';
+        document.getElementById('timer').innerText = '0';
+        document.getElementById('game-grid').innerHTML = '';
+        cards.sort(() => Math.random() - 0.5);
+
+        cards.forEach((f, i) => {
+            const card = document.createElement('div');
+            card.className = 'card flipped';
+            card.dataset.val = f;
+            card.innerText = f;
+            card.onclick = () => flip(card);
+            document.getElementById('game-grid').appendChild(card);
+        });
+
+        // إخفاء الكروت بعد 3 ثواني
+        setTimeout(() => {
+            document.querySelectorAll('.card').forEach(c => {
+                c.classList.remove('flipped');
+                c.innerText = '';
+            });
+            startTimer();
+        }, 3000);
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            seconds++;
+            document.getElementById('timer').innerText = seconds;
+        }, 1000);
+    }
+
+    function flip(card) {
+        if (flippedCards.length < 2 && !card.classList.contains('flipped')) {
+            card.classList.add('flipped');
+            card.innerText = card.dataset.val;
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').innerText = moves;
+                if (flippedCards[0].dataset.val === flippedCards[1].dataset.val) {
+                    flippedCards.forEach(c => c.classList.add('matched'));
+                    flippedCards = [];
+                    matches++;
+                    if (matches === fruits.length) win();
+                } else {
+                    setTimeout(() => {
+                        flippedCards.forEach(c => { c.classList.remove('flipped'); c.innerText = ''; });
+                        flippedCards = [];
+                    }, 1000);
+                }
+            }
+        }
+    }
+
+    async function win() {
+        clearInterval(timerInterval);
+        const score = Math.max(1000 - (seconds * 2) - (moves * 5), 10);
+        alert(`فزت! نقاطك: ${score}`);
+        await db.collection('leaderboard').add({
+            name: auth.currentUser.displayName,
+            score: score,
+            date: new Date()
+        });
+        loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+        const snap = await db.collection('leaderboard').orderBy('score', 'desc').limit(5).get();
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '';
+        snap.forEach(doc => {
+            list.innerHTML += `<li><span>${doc.data().name}</span> <b>${doc.data().score}</b></li>`;
+        });
+    }
+</script>
+</body>
+</html>
 
