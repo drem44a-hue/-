@@ -3,60 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة الذاكرة الاحترافية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <title>لعبة الذاكرة | تحدي الفواكه</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* --- التصميم الاحترافي --- */
-        :root { --primary: #6c5ce7; --bg: #f8f9fa; --card: #2d3436; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .app { background: white; width: 90%; max-width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
+        :root { --main: #6c5ce7; --bg: #f0f3f7; --card: #2d3436; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; width: 90%; max-width: 450px; padding: 25px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
         .screen { display: none; }
         .active { display: block; }
-        h1 { color: var(--primary); margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); }
-        button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        h1 { color: var(--main); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--main); }
+        button { width: 100%; padding: 14px; background: var(--main); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { transform: scale(1.02); background: #5b4bc4; }
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
         .card { height: 70px; background: var(--card); border-radius: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 2rem; color: transparent; transition: 0.4s; }
-        .card.flipped { background: white; border: 2px solid var(--primary); color: initial; transform: rotateY(180deg); }
+        .card.flipped { background: white; border: 2px solid var(--main); color: initial; transform: rotateY(180deg); }
         .card.matched { background: #00b894; border-color: #00b894; cursor: default; }
-        .stats { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: #636e72; }
-        .leaderboard { margin-top: 20px; background: #f1f2f6; padding: 15px; border-radius: 15px; text-align: right; }
-        .leaderboard h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--primary); border-bottom: 1px solid #ddd; }
-        ul { list-style: none; padding: 0; margin: 0; }
-        li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; color: #636e72; }
+        .leaderboard { margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 15px; text-align: right; }
+        li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        #error-txt { color: red; font-size: 0.8rem; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="app">
+<div class="container">
     <div id="auth-screen" class="screen active">
-        <h1 id="auth-title">تسجيل دخول</h1>
+        <h1>🍓 ذاكرة الفواكه</h1>
         <input type="email" id="email" placeholder="البريد الإلكتروني">
         <input type="password" id="password" placeholder="كلمة المرور">
-        <div id="register-only" style="display: none;">
-            <input type="text" id="username" placeholder="اسم اللاعب">
-        </div>
+        <div id="reg-box" style="display:none;"><input type="text" id="username" placeholder="اسم اللاعب"></div>
         <button id="auth-btn" onclick="handleAuth()">دخول</button>
-        <button onclick="toggleAuth()" style="background: none; color: var(--primary); text-decoration: underline;">تبديل (دخول / إنشاء حساب)</button>
+        <button style="background:none; color:var(--main); text-decoration:underline; font-size:0.8rem;" onclick="toggleAuth()">تبديل (دخول / إنشاء حساب)</button>
+        <p id="error-txt"></p>
     </div>
 
     <div id="game-screen" class="screen">
         <div class="stats">
-            <div>اللاعب: <span id="p-name" style="color:var(--primary)"></span></div>
-            <button onclick="logout()" style="width:auto; padding:5px 10px; margin:0; font-size:0.7rem; background:#ff7675;">خروج</button>
+            <div>اللاعب: <span id="p-name" style="color:var(--main)"></span></div>
+            <button onclick="logout()" style="width:auto; padding:5px; background:#ff7675; font-size:0.7rem;">خروج</button>
         </div>
         <div class="stats">
             <div>⏱️ <span id="timer">0</span> ث</div>
             <div>🔄 حركات: <span id="moves">0</span></div>
         </div>
         <div class="grid" id="grid"></div>
-        <button onclick="initGame()">بدء اللعب (كشف 3 ثواني)</button>
-
+        <button onclick="startGame()">ابدأ اللعب</button>
         <div class="leaderboard">
-            <h3>🏆 قائمة المتصدرين الحقيقية</h3>
-            <ul id="leader-list"><li>جاري التحميل...</li></ul>
+            <h3>🏆 المتصدرون</h3>
+            <ul id="leader-list"></ul>
         </div>
     </div>
 </div>
@@ -66,14 +62,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
 <script>
-    // --- بياناتك من الصورة ---
+    // بياناتك الحقيقية من الصورة (الصورة 4)
     const firebaseConfig = {
       apiKey: "AIzaSyCb7HtlR_2epwO-cbHk8Y2GDIW5x7jqhy4",
       authDomain: "enter-you-pas.firebaseapp.com",
       projectId: "enter-you-pas",
       storageBucket: "enter-you-pas.firebasestorage.app",
       messagingSenderId: "1003250102693",
-      appId: "1:1003250102693:web:c1a423dce5cad89cb3b84c"
+      appId: "1:1003250102693:web:c1a423dce5cad89cb3b84c",
+      measurementId: "G-XBXMZY582L"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -83,28 +80,24 @@
     let isLogin = true;
     function toggleAuth() {
         isLogin = !isLogin;
-        document.getElementById('auth-title').innerText = isLogin ? 'تسجيل دخول' : 'إنشاء حساب جديد';
-        document.getElementById('auth-btn').innerText = isLogin ? 'دخول' : 'تسجيل';
-        document.getElementById('register-only').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('reg-box').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('auth-btn').innerText = isLogin ? 'دخول' : 'إنشاء حساب';
     }
 
     async function handleAuth() {
         const e = document.getElementById('email').value;
         const p = document.getElementById('password').value;
         const u = document.getElementById('username').value;
-        if (!e || !p) return alert("امسح الخانات الفارغة!");
-        
+        const err = document.getElementById('error-txt');
         try {
-            if (isLogin) {
-                await auth.signInWithEmailAndPassword(e, p);
-            } else {
-                if (!u) return alert("أدخل اسم اللاعب!");
+            if (isLogin) { await auth.signInWithEmailAndPassword(e, p); }
+            else { 
                 const res = await auth.createUserWithEmailAndPassword(e, p);
                 await res.user.updateProfile({ displayName: u });
-                alert("تم التسجيل! يمكنك الدخول الآن.");
-                location.reload(); 
+                alert("تم إنشاء الحساب! سجل دخولك الآن.");
+                location.reload();
             }
-        } catch (err) { alert("خطأ: " + err.message); }
+        } catch (m) { err.innerText = m.message; }
     }
 
     auth.onAuthStateChanged(user => {
@@ -112,32 +105,26 @@
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
             document.getElementById('p-name').innerText = user.displayName || user.email;
-            loadLeaderboard();
-        } else {
-            document.getElementById('auth-screen').classList.add('active');
-            document.getElementById('game-screen').classList.remove('active');
+            loadLeaders();
         }
     });
 
-    function logout() { auth.signOut(); }
+    function logout() { auth.signOut(); location.reload(); }
 
-    // --- منطق اللعبة ---
+    // اللعبة
     const icons = ['🍎', '🍌', '🍇', '🍉', '🍒', '🍓', '🍍', '🥝'];
     let flipped = [], moves = 0, matches = 0, seconds = 0, timer;
 
-    function initGame() {
-        clearInterval(timer); moves = 0; matches = 0; seconds = 0;
+    function startGame() {
+        clearInterval(timer); moves=0; matches=0; seconds=0;
         document.getElementById('moves').innerText = '0';
         document.getElementById('timer').innerText = '0';
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
-        
         let cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
         cards.forEach(icon => {
             const card = document.createElement('div');
-            card.className = 'card flipped';
-            card.dataset.icon = icon;
-            card.innerText = icon;
+            card.className = 'card flipped'; card.dataset.icon = icon; card.innerText = icon;
             card.onclick = () => {
                 if (flipped.length < 2 && !card.classList.contains('flipped')) {
                     card.classList.add('flipped'); card.innerText = card.dataset.icon;
@@ -156,7 +143,6 @@
             };
             grid.appendChild(card);
         });
-
         setTimeout(() => { 
             document.querySelectorAll('.card').forEach(c => { c.classList.remove('flipped'); c.innerText=''; });
             timer = setInterval(() => { seconds++; document.getElementById('timer').innerText = seconds; }, 1000);
@@ -166,16 +152,16 @@
     async function win() {
         clearInterval(timer);
         const score = Math.max(1000 - (seconds * 5) - (moves * 10), 50);
-        alert("انتهت اللعبة! نقاطك: " + score);
+        alert("فزت! نقاطك: " + score);
         await db.collection('leaderboard').add({
             name: auth.currentUser.displayName || "لاعب",
             score: score,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        loadLeaderboard();
+        loadLeaders();
     }
 
-    async function loadLeaderboard() {
+    async function loadLeaders() {
         const list = document.getElementById('leader-list');
         const snap = await db.collection('leaderboard').orderBy('score', 'desc').limit(5).get();
         list.innerHTML = '';
